@@ -13,8 +13,8 @@ class BooksApiTestCase(APITestCase):
     def setUp(self):
         self.user = User.objects.create(username="test_user")
         self.book_1 = Book.objects.create(name="test book 1", price=199.99, author_name="author 1")
-        self.book_2 = Book.objects.create(name="test book 2", price=500.01, author_name="author 2")
-        self.book_3 = Book.objects.create(name="test book 3", price=10.00, author_name="author 1")
+        self.book_2 = Book.objects.create(name="test book 2", price=500.01, author_name="author 2", owner=self.user)
+        self.book_3 = Book.objects.create(name="test book 3", price=10.00, author_name="author 1", owner=self.user)
         self.book_4 = Book.objects.create(name="test book 4", price=432.11, author_name="author 4")
 
     def test_get_1(self):
@@ -54,6 +54,7 @@ class BooksApiTestCase(APITestCase):
 
         self.assertEqual(status.HTTP_201_CREATED, response.status_code)
         self.assertEqual(5, len(Book.objects.all()))
+        self.assertEqual(self.user.id, response.data["owner"])
 
     def test_update(self):
         url = reverse('book-detail', args=(self.book_3.id,))
@@ -63,6 +64,29 @@ class BooksApiTestCase(APITestCase):
         self.client.force_login(self.user)
         response = self.client.patch(url, json.dumps(data), content_type='application/json')
 
+        self.assertEqual(status.HTTP_200_OK, response.status_code)
+        self.assertEqual("101.55", response.data['price'])
+
+    def test_update_not_owner(self):
+        self.user_not_owner = User.objects.create(username="test_user_not_owner")
+        url = reverse('book-detail', args=(self.book_3.id,))
+        data = {
+            "price": "101.55"
+        }
+        self.client.force_login(self.user_not_owner)
+        response = self.client.patch(url, json.dumps(data), content_type='application/json')
+    
+        self.assertEqual(status.HTTP_403_FORBIDDEN, response.status_code)
+
+    def test_update_not_owner_but_is_staff(self):
+        self.user_not_owner_but_stuff = User.objects.create(username="test_user_not_owner_but_stuff", is_staff=True)
+        url = reverse('book-detail', args=(self.book_3.id,))
+        data = {
+            "price": "101.55"
+        }
+        self.client.force_login(self.user_not_owner_but_stuff)
+        response = self.client.patch(url, json.dumps(data), content_type='application/json')
+        
         self.assertEqual(status.HTTP_200_OK, response.status_code)
         self.assertEqual("101.55", response.data['price'])
 
