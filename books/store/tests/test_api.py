@@ -6,7 +6,7 @@ from rest_framework.test import APITestCase
 from rest_framework import status
 
 from store.serializers import BooksSerializer
-from store.models import Book
+from store.models import Book, UserBookRelation
 
 
 class BooksApiTestCase(APITestCase):
@@ -101,3 +101,24 @@ class BooksApiTestCase(APITestCase):
         self.assertEqual(status.HTTP_204_NO_CONTENT, response.status_code)
         self.assertEqual(count_books - 1, len(Book.objects.all()))
         self.assertEqual(status.HTTP_404_NOT_FOUND, error_response.status_code)
+
+
+class BooksRelationTestCase(APITestCase):
+    def setUp(self):
+        self.user_1 = User.objects.create(username="test_user_1")
+        self.user_2 = User.objects.create(username="test_user_2")
+
+        self.book_1 = Book.objects.create(name="test book 1", price=199.99, author_name="author 1", owner=self.user_1)
+        self.book_2 = Book.objects.create(name="test book 2", price=500.01, author_name="author 2", owner=self.user_2)
+
+    def test_like(self):
+        url = reverse('userbookrelation-detail', args=(self.book_1.id,))
+        data = {
+            "like": True,
+        }
+        self.client.force_login(self.user_1)
+        response = self.client.patch(url, data=json.dumps(data), content_type='application/json')
+
+        self.assertEqual(status.HTTP_200_OK, response.status_code)
+        relation = UserBookRelation.objects.get(user=self.user_1, book=self.book_1)
+        self.assertTrue(relation.like)

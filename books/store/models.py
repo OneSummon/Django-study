@@ -21,4 +21,4 @@ class UserBookRelation(models.Model):
     book = models.ForeignKey(Book, on_delete=models.CASCADE)
     like = models.BooleanField(default=False)
     in_bookmarks = models.BooleanField(default=False)
-    rate = models.PositiveSmallIntegerField(choices=RATE_CHOICES)
+    rate = models.PositiveSmallIntegerField(choices=RATE_CHOICES, null=True)
