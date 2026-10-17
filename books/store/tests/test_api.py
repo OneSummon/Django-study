@@ -1,5 +1,7 @@
 import json
 
+from django.db.models import Case, When, Count
+from django.db.models.aggregates import Avg
 from django.urls import reverse
 from django.contrib.auth.models import User
 from rest_framework.test import APITestCase
@@ -20,13 +22,17 @@ class BooksApiTestCase(APITestCase):
     def test_get_1(self):
         url = reverse('book-list')
         response = self.client.get(url)
+        books = Book.objects.all().annotate(annotated_likes=Count(Case(When(userbookrelation__like=True, then=1))),
+                                                    rating=Avg('userbookrelation__rate')
+                ).order_by('id')
 
         self.assertEqual(status.HTTP_200_OK, response.status_code)
-        self.assertEqual(BooksSerializer([self.book_1, self.book_2, self.book_3, self.book_4], many=True).data, response.data)
+        self.assertEqual(BooksSerializer(books, many=True).data, response.data)
 
     def test_get_2(self):
         url = reverse('book-list')
         response = self.client.get(url, data={'search': '4'})
+        
 
         self.assertEqual(BooksSerializer(self.book_4).data, response.data[0])
 

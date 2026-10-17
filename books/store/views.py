@@ -1,3 +1,4 @@
+from django.db.models import Avg, When, Case, Count
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
 from rest_framework.mixins import UpdateModelMixin
 from rest_framework.permissions import IsAuthenticated
@@ -11,7 +12,8 @@ from .serializers import BooksSerializer, UserBookRelationSerializiter
 
 # Create your views here.
 class BookViewSet(ModelViewSet):
-    queryset = Book.objects.all()
+    queryset = Book.objects.all().annotate(annotated_likes=Count(Case(When(userbookrelation__like=True, then=1))),
+                                           rating=Avg('userbookrelation__rate')).order_by('id')
     serializer_class = BooksSerializer
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     permission_classes = [IsOwnerOrStaffOrReadOnly]

@@ -1,11 +1,23 @@
-from rest_framework.serializers import ModelSerializer
+from rest_framework.serializers import ModelSerializer, SerializerMethodField, DecimalField
 
 from .models import Book, UserBookRelation
 
 class BooksSerializer(ModelSerializer):
+    likes_count = SerializerMethodField()
+    annotated_likes = SerializerMethodField()
+    rating = DecimalField(max_digits=3, decimal_places=2, read_only=True, default=None)
+
     class Meta:
         model = Book
-        fields = '__all__'
+        fields = ('id', 'name', 'price', 'author_name', 'owner', 'likes_count', 'annotated_likes', 'rating')
+
+    def get_likes_count(self, instance):
+        return UserBookRelation.objects.filter(book=instance, like=True).count()
+
+    def get_annotated_likes(self, instance):
+        if hasattr(instance, 'annotated_likes'):
+            return instance.annotated_likes
+        return self.get_likes_count(instance)
 
 class UserBookRelationSerializiter(ModelSerializer):
     class Meta:
