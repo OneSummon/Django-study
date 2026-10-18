@@ -1,17 +1,22 @@
-from rest_framework.serializers import ModelSerializer, SerializerMethodField, DecimalField
-
+from rest_framework.serializers import ModelSerializer, SerializerMethodField, DecimalField, CharField
+from django.contrib.auth.models import User
 from .models import Book, UserBookRelation
+
+class BookReaderSerializer(ModelSerializer):
+     class Meta:
+        model = User
+        fields = ('first_name', 'last_name')
 
 class BooksSerializer(ModelSerializer):
     annotated_likes = SerializerMethodField()
     rating = DecimalField(max_digits=3, decimal_places=2, read_only=True, default=None)
+    owner_name = CharField(source='owner.username', default="", read_only=True)
+    readers = BookReaderSerializer(many=True, read_only=True)
 
     class Meta:
         model = Book
-        fields = ('id', 'name', 'price', 'author_name', 'owner', 'annotated_likes', 'rating')
+        fields = ('id', 'name', 'price', 'author_name', 'owner', 'annotated_likes', 'rating', 'owner_name', 'readers')
 
-    # def get_likes_count(self, instance):
-    #     return UserBookRelation.objects.filter(book=instance, like=True).count()
 
     def get_annotated_likes(self, instance):
         return UserBookRelation.objects.filter(book=instance, like=True).count()

@@ -22,9 +22,7 @@ class BooksApiTestCase(APITestCase):
     def test_get_1(self):
         url = reverse('book-list')
         response = self.client.get(url)
-        books = Book.objects.all().annotate(annotated_likes=Count(Case(When(userbookrelation__like=True, then=1))),
-                                                    rating=Avg('userbookrelation__rate')
-                ).order_by('id')
+        books = Book.objects.all().annotate(annotated_likes=Count(Case(When(userbookrelation__like=True, then=1)))).order_by('id')
 
         self.assertEqual(status.HTTP_200_OK, response.status_code)
         self.assertEqual(BooksSerializer(books, many=True).data, response.data)
